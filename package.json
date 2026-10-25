@@ -1,0 +1,16 @@
+{
+  "name": "cafe-ecommerce",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api-gateway",
+    "apps/microservices/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=shared",
+     "dev": "npm run start:dev --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"    
+  }
+}

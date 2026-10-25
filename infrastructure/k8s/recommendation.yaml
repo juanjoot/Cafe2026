@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-service
+  namespace: cafe-ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recommendation-service
+  template:
+    metadata:
+      labels:
+        app: recommendation-service
+    spec:
+      containers:
+        - name: recommendation-service
+          image: tu-usuario/recommendation-service:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: REDIS_HOST
+              value: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendation-service
+  namespace: cafe-ecommerce
+spec:
+  selector:
+    app: recommendation-service
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

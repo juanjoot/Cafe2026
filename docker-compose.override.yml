@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  auth-service:
+    volumes:
+      - ./services/auth-service:/app
+    command: npm run start:dev
+
+  product-service:
+    volumes:
+      - ./services/product-service:/app
+    command: npm run start:dev
+
+  order-service:
+    volumes:
+      - ./services/order-service:/app
+    command: npm run start:dev
+
+  notification-service:
+    volumes:
+      - ./services/notification-service:/app
+    command: npm run start:dev
+
+  payment-service:
+    volumes:
+      - ./services/payment-service:/app
+    command: npm run start:dev
+
+  api-gateway:
+    volumes:
+      - ./api-gateway:/app
+    command: npm run start:dev
+
+  recommendation-service:
+    volumes:
+      - ./services/recommendation-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

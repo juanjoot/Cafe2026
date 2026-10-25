@@ -1,0 +1,32 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "build": "nest build"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.17",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^10.4.17",
+    "@nestjs/platform-express": "^10.4.17",
+    "amqplib": "^0.10.3",
+    "bullmq": "^4.5.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "nodemailer": "^6.9.3",
+    "rxjs": "^7.8.2",
+    "shared": "*"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.0.0",
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^22.15.3",
+    "@types/nodemailer": "^6.4.17",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.0.0"
+  }
+}

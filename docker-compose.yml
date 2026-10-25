@@ -1,0 +1,135 @@
+version: '3.9'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./apps/api-gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - recommendation-service
+      - payment-service
+      - notification-service
+    environment:
+      - NODE_ENV=development
+    networks:
+      - cafe-net
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/auth-service/Dockerfile
+    environment:
+      - DATABASE_URL=mongodb://auth-db:27017/auth
+      - REDIS_HOST=redis
+    depends_on:
+      - auth-db
+      - redis
+    networks:
+      - cafe-net
+
+  auth-db:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - auth-data:/data/db
+    networks:
+      - cafe-net
+
+  product-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/product-service/Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/products
+    networks:
+      - cafe-net
+
+  order-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/order-service/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/orders
+    expose:
+      - "3000" # 👈 Exponer puerto internamente para otros contenedores
+    networks:
+      - cafe-net
+
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/recommendation-service/Dockerfile
+    expose:
+      - "3000" # 👈 Exponer puerto si es accedido por otros contenedores
+    networks:
+      - cafe-net
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/payment-service/Dockerfile
+    depends_on:
+      - rabbitmq
+    environment:
+      - STRIPE_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=development
+    networks:
+      - cafe-net
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./apps/microservices/notification-service/Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - cafe-net
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - cafe-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - cafe-net
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - cafe-net
+
+networks:
+  cafe-net:
+
+
+volumes:
+  pg-data:
+  auth-data:
+
+
