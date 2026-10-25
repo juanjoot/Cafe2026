@@ -250,7 +250,8 @@ docker compose up -d
 Para evitar errores de dependencia, el flujo recomendado es:
 
 ```bash
-
+docker compose up -d auth-db postgres redis rabbitmq
+docker compose up -d auth-service
 docker compose up -d product-service
 docker compose up -d order-service
 docker compose up -d payment-service
