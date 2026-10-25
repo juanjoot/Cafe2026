@@ -48,7 +48,7 @@ services:
     depends_on:
       - postgres
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/products
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cafedbsql
     networks:
       - cafe-net
 
@@ -61,7 +61,7 @@ services:
       - redis
       - rabbitmq
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/orders
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cafedbsql
       - RABBITMQ_URL=amqp://rabbitmq:5672
     expose:
       - "3000"
@@ -87,7 +87,9 @@ services:
       dockerfile: ./apps/microservices/payment-service/Dockerfile
     depends_on:
       - rabbitmq
+      - postgres
     environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/cafedbsql
       - STRIPE_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=development
@@ -100,6 +102,10 @@ services:
       dockerfile: ./apps/microservices/notification-service/Dockerfile
     depends_on:
       - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/cafedbsql
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     networks:
       - cafe-net
 
@@ -121,9 +127,12 @@ services:
   postgres:
     image: postgres:15
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cafedbsql
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:

@@ -32,4 +32,4 @@ COPY --from=builder /app/apps/microservices/order-service/dist ./dist
 
 ENV NODE_ENV=production
 
-CMD ["node", "-r", "tsconfig-paths/register", "dist/apps/microservices/order-service/src/main.js"]
+CMD ["node", "-r", "tsconfig-paths/register", "dist/main.js"]

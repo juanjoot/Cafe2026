@@ -74,6 +74,56 @@ Debe verse que los contenedores de backend están activos y en estado `Up`.
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
 
+## Base de datos relacional compartida
+
+Los microservicios de productos, órdenes, pagos y notificaciones comparten la base PostgreSQL `cafedbsql`.
+
+Conexión desde la máquina local:
+
+```env
+Host=localhost
+Port=5432
+User=postgres
+Password=postgres
+Database=cafedbsql
+```
+
+Dentro de Docker Compose, los cuatro servicios se conectan a `postgres:5432/cafedbsql`.
+
+El esquema relacional contiene:
+
+- `categories`, `subcategories` y `products` para el catálogo.
+- `orders` y `order_items`; cada artículo conserva el precio y el nombre del producto al comprarlo y referencia el producto del catálogo.
+- `payments`, relacionadas con la orden correspondiente.
+- `notifications`, relacionadas opcionalmente con la orden y el pago, con estado de envío.
+
+La tabla `order_items` usa `product_id` como FK nullable: si se elimina un producto, se conserva el detalle histórico de la compra y se limpia solo la referencia al catálogo. Los pagos impiden borrar una orden asociada.
+
+Inicializa la base y las tablas después de levantar PostgreSQL:
+
+```bash
+docker compose up -d postgres
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres -d cafedbsql < apps/microservices/product-service/init.sql
+```
+
+`POSTGRES_DB=cafedbsql` crea la base automáticamente en un volumen PostgreSQL nuevo. Si ya usas un volumen existente, crea la base una vez antes de ejecutar el esquema:
+
+```bash
+docker compose exec postgres createdb -U postgres cafedbsql
+```
+
+Si el volumen existente ya contiene una base `products`, migra su catálogo a `cafedbsql` después de inicializar el esquema. El siguiente procedimiento conserva los registros del catálogo y reemplaza los datos de ejemplo del destino:
+
+```bash
+docker compose exec -T postgres psql -U postgres -d cafedbsql -c \
+  'TRUNCATE TABLE products, subcategories, categories CASCADE;'
+docker compose exec -T postgres pg_dump -U postgres --data-only \
+  --table=categories --table=subcategories --table=products products \
+  | docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres -d cafedbsql
+```
+
+La versión anterior de `order-service` no guardaba las órdenes en PostgreSQL, por lo que no hay órdenes de esa versión que migrar. Pagos y notificaciones tampoco tenían persistencia SQL.
+
 ## 7) Crear la base de datos de MongoDB
 
 La base de datos del servicio de autenticación se llama `auth`.
@@ -139,16 +189,15 @@ Si quisieras conectarte desde tu máquina local, usarías:
 DATABASE_URL=mongodb://localhost:27017/auth
 ```
 
-## Base de datos del servicio de productos
+## Base de datos compartida de los servicios de negocio
 
-El servicio de productos usa PostgreSQL y espera una base llamada `products`. Créala una vez y ejecuta el script de esquema y datos de prueba:
+El script SQL crea el esquema compartido y carga categorías, subcategorías y productos de ejemplo. Ejecútalo una vez en `cafedbsql`:
 
 ```bash
-docker compose exec -T postgres createdb -U postgres products
-docker compose exec -T postgres psql -U postgres -d products < apps/microservices/product-service/init.sql
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres -d cafedbsql < apps/microservices/product-service/init.sql
 ```
 
-`init.sql` es repetible: crea las tablas si no existen, corrige las FK de productos para que coincidan con las relaciones de TypeORM y carga categorías, subcategorías y productos de ejemplo asociados a ambas. La subcategoría es opcional al crear productos y debe pertenecer a la categoría indicada. Para volver a cargar el script, ejecuta solo el segundo comando.
+`init.sql` es repetible: crea las tablas si no existen y carga/actualiza categorías, subcategorías y productos de ejemplo asociados. La subcategoría es opcional al crear productos y debe pertenecer a la categoría indicada.
 
 Compila y levanta el servicio:
 
@@ -161,8 +210,15 @@ docker compose logs -f product-service
 Comprueba los datos desde PostgreSQL:
 
 ```bash
-docker compose exec -T postgres psql -U postgres -d products -c \
+docker compose exec -T postgres psql -U postgres -d cafedbsql -c \
   'SELECT (SELECT count(*) FROM categories) AS categorias, (SELECT count(*) FROM subcategories) AS subcategorias, (SELECT count(*) FROM products) AS productos;'
+```
+
+Para verificar las tablas compartidas:
+
+```bash
+docker compose exec -T postgres psql -U postgres -d cafedbsql -c \
+  '\dt'
 ```
 
 Las rutas incluyen `GET /products`, `GET /categories` y `GET /subcategories`. En Docker, el servicio escucha en el puerto `3000` dentro de la red interna de Compose.
@@ -194,8 +250,7 @@ docker compose up -d
 Para evitar errores de dependencia, el flujo recomendado es:
 
 ```bash
-docker compose up -d auth-db postgres redis rabbitmq
-docker compose up -d auth-service
+
 docker compose up -d product-service
 docker compose up -d order-service
 docker compose up -d payment-service

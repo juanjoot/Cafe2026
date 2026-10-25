@@ -83,6 +83,62 @@ CREATE INDEX IF NOT EXISTS idx_products_categoria_id
 CREATE INDEX IF NOT EXISTS idx_products_subcategoria_id
   ON products (subcategoria_id);
 
+CREATE TABLE IF NOT EXISTS orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  customer_id VARCHAR(255),
+  customer_email VARCHAR(255),
+  total NUMERIC(10, 2) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  line_number INTEGER NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price >= 0),
+  CONSTRAINT uq_order_items_line UNIQUE (order_id, line_number)
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  currency VARCHAR(3) NOT NULL DEFAULT 'usd',
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  stripe_charge_id VARCHAR(255) UNIQUE,
+  email VARCHAR(255),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
+  event_type VARCHAR(100),
+  recipient VARCHAR(255) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  provider_message_id VARCHAR(255),
+  error_message TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  sent_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id
+  ON order_items (product_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id
+  ON payments (order_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_order_id
+  ON notifications (order_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_payment_id
+  ON notifications (payment_id);
+
 INSERT INTO categories (id, nombre, descripcion)
 VALUES
   ('11111111-1111-4111-8111-111111111111', 'Café', 'Cafés y bebidas para preparar en casa.'),

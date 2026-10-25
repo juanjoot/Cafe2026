@@ -1,23 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { OrderItem } from './order-item.entity';
 
-@Entity()
+@Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
-  customerEmail!: string;
+  @Column({ name: 'customer_id', type: 'varchar', nullable: true })
+  customerId!: string | null;
 
-  @Column('jsonb')
-  items!: {
-    id: string;
-    name: string;
-    origin: string;
-  }[];
+  @Column({ name: 'customer_email', type: 'varchar', nullable: true })
+  customerEmail!: string | null;
 
-  @Column('decimal')
-  total!: number;
+  @Column('decimal', { precision: 10, scale: 2 })
+  total!: string;
+
+  @Column({ type: 'varchar', default: 'pending' })
+  status!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
+
+  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
+  items!: OrderItem[];
 }

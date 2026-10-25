@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderModule } from './order/order.module';
 import { Order } from './order/order.entity';
+import { OrderItem } from './order/order-item.entity';
+import { ProductReference } from './order/product-reference.entity';
 import { RabbitMQModule } from '@shared/rabbitmq';
 
 @Module({
@@ -11,13 +13,12 @@ import { RabbitMQModule } from '@shared/rabbitmq';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Order],
-      synchronize: true, // ⚠️ solo para desarrollo
+      entities: [Order, OrderItem, ProductReference],
+      synchronize: false,
     }),
     OrderModule,
     RabbitMQModule,
   ],
 })
 export class AppModule {}
-
 
