@@ -8,13 +8,13 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
-    "rootDir": "./src",
     "outDir": "./dist",
     "baseUrl": ".",
     "moduleResolution": "node",
     "incremental": true,
     "strict": true,
     "esModuleInterop": true,
+    "rootDirs": ["./src", "../../../packages/shared"],
     "paths": {
       "@shared/*": ["../../../packages/shared/*"]
     }

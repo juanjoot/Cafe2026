@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   api-gateway:
     build:
@@ -60,10 +58,12 @@ services:
     depends_on:
       - postgres
       - redis
+      - rabbitmq
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/orders
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     expose:
-      - "3000" # 👈 Exponer puerto internamente para otros contenedores
+      - "3000"
     networks:
       - cafe-net
 
@@ -71,8 +71,8 @@ services:
     build:
       context: .
       dockerfile: ./apps/microservices/recommendation-service/Dockerfile
-    expose:
-      - "3000" # 👈 Exponer puerto si es accedido por otros contenedores
+    ports:
+      - "8000:8000"
     networks:
       - cafe-net
 
@@ -126,7 +126,6 @@ services:
 
 networks:
   cafe-net:
-
 
 volumes:
   pg-data:
