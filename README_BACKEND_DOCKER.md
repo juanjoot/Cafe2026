@@ -139,6 +139,34 @@ Si quisieras conectarte desde tu máquina local, usarías:
 DATABASE_URL=mongodb://localhost:27017/auth
 ```
 
+## Base de datos del servicio de productos
+
+El servicio de productos usa PostgreSQL y espera una base llamada `products`. Créala una vez y ejecuta el script de esquema y datos de prueba:
+
+```bash
+docker compose exec -T postgres createdb -U postgres products
+docker compose exec -T postgres psql -U postgres -d products < apps/microservices/product-service/init.sql
+```
+
+`init.sql` es repetible: crea las tablas si no existen, corrige las FK de productos para que coincidan con las relaciones de TypeORM y carga categorías, subcategorías y productos de ejemplo asociados a ambas. La subcategoría es opcional al crear productos y debe pertenecer a la categoría indicada. Para volver a cargar el script, ejecuta solo el segundo comando.
+
+Compila y levanta el servicio:
+
+```bash
+npm run build --workspace=product-service
+docker compose up -d --build product-service
+docker compose logs -f product-service
+```
+
+Comprueba los datos desde PostgreSQL:
+
+```bash
+docker compose exec -T postgres psql -U postgres -d products -c \
+  'SELECT (SELECT count(*) FROM categories) AS categorias, (SELECT count(*) FROM subcategories) AS subcategorias, (SELECT count(*) FROM products) AS productos;'
+```
+
+Las rutas incluyen `GET /products`, `GET /categories` y `GET /subcategories`. En Docker, el servicio escucha en el puerto `3000` dentro de la red interna de Compose.
+
 ## 10) Reiniciar desde cero
 
 Si quieres limpiar todo y volver a levantar:

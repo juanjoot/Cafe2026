@@ -11,7 +11,7 @@ export class Category {
   @Column()
   nombre!: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   descripcion?: string;
 
   @OneToMany(() => Product, (product) => product.categoria)

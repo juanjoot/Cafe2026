@@ -70,4 +70,8 @@ export class CreateProductDto {
   @IsUUID('all', { each: true })
   @Type(() => String) // ✅ para relaciones con id tipo uuid en PostgreSQL
   categoria!: string;
+
+  @IsOptional()
+  @IsUUID()
+  subcategoria?: string;
 }

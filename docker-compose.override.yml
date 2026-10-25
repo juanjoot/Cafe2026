@@ -1,35 +1,18 @@
 services:
   auth-service:
-    volumes:
-      - ./apps/microservices/auth-service:/app
-    command: npm run start:dev
-
-  product-service:
-    volumes:
-      - ./apps/microservices/product-service:/app
-    command: npm run start:dev
-
-  order-service:
-    volumes:
-      - ./apps/microservices/order-service:/app
-    command: npm run start:dev
-
-  notification-service:
-    volumes:
-      - ./apps/microservices/notification-service:/app
-    command: npm run start:dev
-
-  payment-service:
-    volumes:
-      - ./apps/microservices/payment-service:/app
-    command: npm run start:dev
+    command: node dist/apps/microservices/auth-service/src/main.js
+    environment:
+      - DATABASE_URL=mongodb://host.docker.internal:27017/auth
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   api-gateway:
     volumes:
-      - ./apps/api-gateway:/app
-    command: npm run start:dev
+      - ./apps/api-gateway:/usr/src/app/apps/api-gateway
+    command: npm --prefix /usr/src/app/apps/api-gateway run start:dev
 
   recommendation-service:
-    volumes:
-      - ./apps/microservices/recommendation-service:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - REDIS_HOST=host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

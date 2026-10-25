@@ -9,6 +9,7 @@ COPY apps/microservices/auth-service/package*.json ./apps/microservices/auth-ser
 COPY packages/shared/package*.json ./packages/shared/
 
 RUN npm install
+RUN mkdir -p /app/apps/microservices/auth-service/node_modules
 
 # Copiar el código fuente
 COPY apps/microservices/auth-service ./apps/microservices/auth-service
@@ -21,13 +22,14 @@ RUN npm run build --workspace=auth-service
 # Etapa 2: Producción
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/apps/microservices/auth-service
 
-COPY --from=builder /app/apps/microservices/auth-service/package*.json ./
-COPY --from=builder /app/apps/microservices/auth-service/node_modules ./node_modules
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/microservices/auth-service/node_modules /app/node_modules
+COPY --from=builder /app/packages/shared /app/packages/shared
+COPY --from=builder /app/apps/microservices/auth-service/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/apps/microservices/auth-service/dist ./dist
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/main.js"]
-
+CMD ["node", "dist/apps/microservices/auth-service/src/main.js"]

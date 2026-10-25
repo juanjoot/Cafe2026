@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Between, FindOptionsWhere } from 'typeorm';
 import { Product } from './entities/product.entity';
@@ -6,6 +6,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { Category } from '../category/entities/category.entity'; // ✅ importa Category
+import { SubCategory } from '../subcategory/entities/subcategory.entity';
 import { NotFoundException } from '@nestjs/common';
 
 // product.service.ts
@@ -17,6 +18,9 @@ export class ProductService {
 
     @InjectRepository(Category)  // ✅ aquí lo inyectas
     private readonly categoryRepo: Repository<Category>,
+
+    @InjectRepository(SubCategory)
+    private readonly subCategoryRepo: Repository<SubCategory>,
   ) {}
 
   async findAll(query: QueryProductDto) {
@@ -51,7 +55,7 @@ export class ProductService {
   
     const [data, total] = await this.productRepo.findAndCount({
       where,
-      relations: ['categoria'],
+      relations: ['categoria', 'subcategoria'],
       skip,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -74,11 +78,28 @@ export class ProductService {
     if (!categoria) {
       throw new Error('Categoría no válida');
     }
+
+    let subcategoria: SubCategory | null = null;
+    if (dto.subcategoria) {
+      const requestedSubcategory = await this.subCategoryRepo.findOne({
+        where: { id: dto.subcategoria },
+        relations: ['categoria'],
+      });
+
+      if (!requestedSubcategory || requestedSubcategory.categoria.id !== categoria.id) {
+        throw new BadRequestException(
+          'La subcategoría no existe o no pertenece a la categoría indicada',
+        );
+      }
+
+      subcategoria = requestedSubcategory;
+    }
   
     // Crear entidad Product a partir del DTO
     const newProduct = this.productRepo.create({
       ...dto,
       categoria, // ✅ asignamos la entidad completa (o { id: dto.categoria } también es válido)
+      subcategoria,
     });
   
     return this.productRepo.save(newProduct);
@@ -88,18 +109,43 @@ export class ProductService {
   async update(id: string, dto: UpdateProductDto) {
     const existing = await this.productRepo.findOne({
       where: { id },
-      relations: ['categoria'],
+      relations: ['categoria', 'subcategoria'],
     });
   
     if (!existing) {
       throw new Error('Producto no encontrado');
     }
   
-    const updatedData: Partial<Product> = {
-      ...dto,
-      // Aquí convertimos correctamente el string ID a objeto { id }
-      categoria: dto.categoria ? ({ id: dto.categoria } as Category) : existing.categoria,
-    };
+    const categoria = dto.categoria
+      ? await this.categoryRepo.findOneBy({ id: dto.categoria })
+      : existing.categoria;
+
+    if (!categoria) {
+      throw new BadRequestException('Categoría no válida');
+    }
+
+    let subcategoria = existing.subcategoria ?? null;
+    if (dto.subcategoria) {
+      const requestedSubcategory = await this.subCategoryRepo.findOne({
+        where: { id: dto.subcategoria },
+        relations: ['categoria'],
+      });
+
+      if (!requestedSubcategory || requestedSubcategory.categoria.id !== categoria.id) {
+        throw new BadRequestException(
+          'La subcategoría no existe o no pertenece a la categoría indicada',
+        );
+      }
+
+      subcategoria = requestedSubcategory;
+    } else if (existing.subcategoria && existing.subcategoria.categoria.id !== categoria.id) {
+      throw new BadRequestException(
+        'Debe indicar una subcategoría que pertenezca a la nueva categoría',
+      );
+    }
+
+    const { subcategoria: _subcategoryId, categoria: _categoryId, ...fields } = dto;
+    const updatedData: Partial<Product> = { ...fields, categoria, subcategoria };
   
     const updated = this.productRepo.merge(existing, updatedData);
     return this.productRepo.save(updated);
@@ -114,7 +160,7 @@ export class ProductService {
   async findOne(id: string): Promise<Product> {
   const product = await this.productRepo.findOne({
     where: { id },
-    relations: ['categoria'],
+    relations: ['categoria', 'subcategoria'],
   });
 
   if (!product) {
@@ -125,4 +171,3 @@ export class ProductService {
  }
 
 }
-

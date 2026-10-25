@@ -14,6 +14,7 @@ services:
       - notification-service
     environment:
       - NODE_ENV=development
+      - PORT=3000
     networks:
       - cafe-net
 
@@ -72,7 +73,11 @@ services:
       context: .
       dockerfile: ./apps/microservices/recommendation-service/Dockerfile
     ports:
-      - "8000:8000"
+      - "8000:3000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
     networks:
       - cafe-net
 
@@ -130,5 +135,3 @@ networks:
 volumes:
   pg-data:
   auth-data:
-
-

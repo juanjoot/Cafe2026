@@ -23,7 +23,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const decoded: any = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.JWT_SECRET || 'supersecret_dev_token',
       });
 
       const user = await this.userModel.findById(decoded.sub).select('-password');
