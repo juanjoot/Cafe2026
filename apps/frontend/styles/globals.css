@@ -1,0 +1,9 @@
+@import "tailwindcss/preflight";   /* reemplaza @tailwind base */
+@import "tailwindcss/components";  /* reemplaza @tailwind components */
+@import "tailwindcss/utilities";  /* reemplaza @tailwind utilities */
+
+body {
+  font-family: system-ui, sans-serif;
+  background-color: #fff;
+  color: #1a202c;
+}
