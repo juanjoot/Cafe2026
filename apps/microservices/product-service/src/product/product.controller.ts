@@ -35,4 +35,8 @@ export class ProductController {
   findOne(@Param('id') id: string) {
   return this.productService.findOne(id);
 }
+@Get()
+  getHello(): string {
+    return '¡Bienvenido al Product-Service del Cafe Ecommerce! ☕';
+  }
 }
