@@ -9,6 +9,7 @@ COPY apps/microservices/notification-service/package*.json ./apps/microservices/
 COPY packages/shared/package*.json ./packages/shared/
 
 RUN npm install
+RUN mkdir -p /app/apps/microservices/notification-service/node_modules
 
 # Copiar el código fuente
 COPY apps/microservices/notification-service ./apps/microservices/notification-service
@@ -21,13 +22,14 @@ RUN npm run build --workspace=notification-service
 # Etapa 2: Producción
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/apps/microservices/notification-service
 
-COPY --from=builder /app/apps/microservices/notification-service/package*.json ./
-COPY --from=builder /app/apps/microservices/notification-service/node_modules ./node_modules
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/microservices/notification-service/node_modules /app/node_modules
+COPY --from=builder /app/packages/shared /app/packages/shared
+COPY --from=builder /app/apps/microservices/notification-service/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/apps/microservices/notification-service/dist ./dist
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/main.js"]
-
+CMD ["node", "-r", "tsconfig-paths/register", "dist/apps/microservices/notification-service/src/main.js"]

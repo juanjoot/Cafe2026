@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../user/schemas/user.schema';
 import { Client } from '../user/schemas/client.schema';
@@ -6,7 +6,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { RabbitMQService } from 'shared/rabbitmq';
+import { RabbitMQService } from '@shared/rabbitmq';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +25,7 @@ export class AuthService {
     const user = await this.userModel.findOne({ email: dto.email });
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
       console.log('❌ Contraseña incorrecta o usuario no existe');
-      throw new Error('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const payload = { sub: user._id, email: user.email };
@@ -39,7 +39,7 @@ export class AuthService {
   async loginWithClient(dto: LoginDto) {
     const user = await this.userModel.findOne({ email: dto.email });
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-      throw new Error('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const client = await this.clientModel.findOne({ usuario: user._id });

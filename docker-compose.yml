@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   api-gateway:
     build:
@@ -16,6 +14,7 @@ services:
       - notification-service
     environment:
       - NODE_ENV=development
+      - PORT=3000
     networks:
       - cafe-net
 
@@ -49,7 +48,7 @@ services:
     depends_on:
       - postgres
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/products
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cafedbsql
     networks:
       - cafe-net
 
@@ -60,10 +59,12 @@ services:
     depends_on:
       - postgres
       - redis
+      - rabbitmq
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/orders
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cafedbsql
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     expose:
-      - "3000" # 👈 Exponer puerto internamente para otros contenedores
+      - "3000"
     networks:
       - cafe-net
 
@@ -71,8 +72,12 @@ services:
     build:
       context: .
       dockerfile: ./apps/microservices/recommendation-service/Dockerfile
-    expose:
-      - "3000" # 👈 Exponer puerto si es accedido por otros contenedores
+    ports:
+      - "8000:3000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
     networks:
       - cafe-net
 
@@ -82,7 +87,9 @@ services:
       dockerfile: ./apps/microservices/payment-service/Dockerfile
     depends_on:
       - rabbitmq
+      - postgres
     environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/cafedbsql
       - STRIPE_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=development
@@ -95,6 +102,10 @@ services:
       dockerfile: ./apps/microservices/notification-service/Dockerfile
     depends_on:
       - rabbitmq
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/cafedbsql
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     networks:
       - cafe-net
 
@@ -116,9 +127,12 @@ services:
   postgres:
     image: postgres:15
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cafedbsql
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
@@ -127,9 +141,6 @@ services:
 networks:
   cafe-net:
 
-
 volumes:
   pg-data:
   auth-data:
-
-

@@ -9,6 +9,7 @@ COPY apps/microservices/order-service/package*.json ./apps/microservices/order-s
 COPY packages/shared/package*.json ./packages/shared/
 
 RUN npm install
+RUN mkdir -p /app/apps/microservices/order-service/node_modules
 
 # Copiar el código fuente
 COPY apps/microservices/order-service ./apps/microservices/order-service
@@ -21,13 +22,14 @@ RUN npm run build --workspace=order-service
 # Etapa 2: Producción
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/apps/microservices/order-service
 
-COPY --from=builder /app/apps/microservices/order-service/package*.json ./
-COPY --from=builder /app/apps/microservices/order-service/node_modules ./node_modules
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/microservices/order-service/node_modules /app/node_modules
+COPY --from=builder /app/packages/shared /app/packages/shared
+COPY --from=builder /app/apps/microservices/order-service/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/apps/microservices/order-service/dist ./dist
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/main.js"]
-
+CMD ["node", "-r", "tsconfig-paths/register", "dist/main.js"]

@@ -35,4 +35,5 @@ export class ProductController {
   findOne(@Param('id') id: string) {
   return this.productService.findOne(id);
 }
+
 }

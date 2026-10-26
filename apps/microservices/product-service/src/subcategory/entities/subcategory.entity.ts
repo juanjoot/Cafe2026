@@ -1,6 +1,14 @@
 // src/subcategory/entities/subcategory.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Category } from '../../category/entities/category.entity';
+import { Product } from '../../product/entities/product.entity';
 
 @Entity('subcategories')
 export class SubCategory {
@@ -10,10 +18,15 @@ export class SubCategory {
   @Column()
   nombre!: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   descripcion?: string;
 
-  @ManyToOne(() => Category, (category) => category.subcategorias)
+  @ManyToOne(() => Category, (category) => category.subcategorias, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'categoria_id' })
   categoria!: Category;
+
+  @OneToMany(() => Product, (product) => product.subcategoria)
+  products!: Product[];
 }
