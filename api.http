@@ -1,0 +1,44 @@
+### Configuración de variables locales
+@hostname = localhost
+@port = 3001
+@baseUrl = http://{{hostname}}:{{port}}
+
+#########################################
+### 📂 PRUEBAS DE CATEGORÍAS
+#########################################
+
+### 1. Crear una nueva categoría
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Bebidas Calientes",
+  "description": "Cafés espresso, lattes y tés selectos"
+}
+
+###
+
+### 2. Obtener todas las categorías
+GET {{baseUrl}}/categories
+
+###
+
+#########################################
+### ☕ PRUEBAS DE PRODUCTOS
+#########################################
+
+### 3. Crear un nuevo producto
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Café Americano XL",
+  "price": 2.50,
+  "stock": 50,
+  "categoryId": "AQUÍ_EL_ID_DE_LA_CATEGORIA"
+}
+
+###
+
+### 4. Obtener todos los productos
+GET {{baseUrl}}/products
