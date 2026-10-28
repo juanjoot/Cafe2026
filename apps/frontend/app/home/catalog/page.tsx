@@ -19,14 +19,16 @@ export default function CatalogPage() {
   const [precioMin, setPrecioMin] = useState('');
   const [precioMax, setPrecioMax] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [filters, setFilters] = useState({ q: '', precioMin: '', precioMax: '', categoria: '' });
 
-  const fetchProducts = () => {
+  useEffect(() => {
     const params = new URLSearchParams({ page: page.toString() });
-    if (q) params.append('q', q);
-    if (precioMin) params.append('precioMin', precioMin);
-    if (precioMax) params.append('precioMax', precioMax);
-    if (categoria) params.append('categoria', categoria);
+    if (filters.q) params.append('q', filters.q);
+    if (filters.precioMin) params.append('precioMin', filters.precioMin);
+    if (filters.precioMax) params.append('precioMax', filters.precioMax);
+    if (filters.categoria) params.append('categoria', filters.categoria);
 
+    setError(null);
     api.get<{ data: Product[]; total: number; page: number; limit: number; pages: number }>(`/products?${params.toString()}`)
       .then((res) => {
         const lista = res.data.data;
@@ -34,25 +36,21 @@ export default function CatalogPage() {
         setPages(res.data.pages ?? 1);
       })
       .catch((err) => {
-        console.error(err);
+        console.error('No se pudieron cargar los productos', err);
         setError('No se pudo obtener la lista de productos');
       });
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, [page]);
+  }, [page, filters]);
 
   useEffect(() => {
     api.get<{ data: Category[] }>('/categories')
       .then((res) => setCategories(res.data.data))
-      .catch((err) => console.error('No se pudieron cargar las categorías'));
+      .catch((err) => console.error('No se pudieron cargar las categorías', err));
   }, []);
 
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchProducts();
+    setFilters({ q, precioMin, precioMax, categoria });
   };
 
   const handlePrevious = () => setPage((prev) => Math.max(prev - 1, 1));

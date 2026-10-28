@@ -6,7 +6,7 @@ services:
       context: ./frontend
     container_name: cafe-frontend
     ports:
-      - "3000:3000"
+      - "3003:3003"
     depends_on:
       - api-gateway
     environment:
@@ -17,7 +17,7 @@ services:
       context: ./api-gateway
     container_name: cafe-api-gateway
     ports:
-      - "3001:3000"
+      - "3001:3001"
     environment:
       - JWT_SECRET=miclaveultrasecreta
     depends_on:
@@ -30,7 +30,7 @@ services:
       context: ./product-service
     container_name: cafe-product-service
     ports:
-      - "3002:3000"
+      - "3002:3002"
 
   auth-service:
     image: cafe-auth-service
@@ -38,4 +38,4 @@ services:
       context: ./auth-service
     container_name: cafe-auth-service
     ports:
-      - "3003:3000"
+      - "3000:3000"
